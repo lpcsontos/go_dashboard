@@ -1,8 +1,9 @@
 package main
 
 import (
-	"db_test/utils"
-	"db_test/handlers"
+	"dashboard/utils"
+	"dashboard/handlers"
+	"dashboard/auth"
    "log"
    "net/http"
 	_ "html/template"
@@ -23,11 +24,11 @@ func main() {
 
    mux.HandleFunc("/", handlers.Root)
 	mux.HandleFunc("/login", handlers.LoginHand)
-	mux.HandleFunc("/register", handlers.RegHand)
+	mux.HandleFunc("/register", auth.AuthAdmin(handlers.RegHand))
 	mux.HandleFunc("/submit_login", handlers.Login)
-	mux.HandleFunc("/submit_reg", handlers.Register)
-	mux.HandleFunc("/test", utils.Auth(handlers.TestHand))
-	mux.HandleFunc("/logout", utils.CSRFMiddleware(handlers.LogoutHand))
+	mux.HandleFunc("/submit_reg", auth.CSRFMiddlewareAdmin(handlers.Register))
+	mux.HandleFunc("/test", auth.Auth(handlers.TestHand))
+	mux.HandleFunc("/logout", auth.CSRFMiddleware(handlers.LogoutHand))
 
    err = http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", mux)
    if err != nil {

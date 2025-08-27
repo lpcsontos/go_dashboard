@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"db_test/utils"
+	"dashboard/utils"
    _ "database/sql"
 	"fmt"
 	"time"
@@ -13,6 +13,9 @@ import (
 	_ "golang.org/x/crypto/bcrypt"
 )
 
+func Root(w http.ResponseWriter, r *http.Request){
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
 
 func LoginHand( w http.ResponseWriter, r *http.Request){
 	err := utils.LoginPage.Execute(w, nil)
@@ -51,10 +54,9 @@ func Login(w http.ResponseWriter, r *http.Request){
 	}
 
 	if utils.PassComp(hash, password){
-		fmt.Printf("siker")
 		
-		sessionToken := utils.GenToken(32)
-		csrfToken := utils.GenToken(32)
+		sessionToken := utils.GenToken(191)
+		csrfToken := utils.GenToken(191)
 
 		http.SetCookie(w, &http.Cookie{
 			Name: "session_token",
@@ -72,23 +74,14 @@ func Login(w http.ResponseWriter, r *http.Request){
 			Secure: true,
 		})
 
-		http.SetCookie(w, &http.Cookie{
-			Name: "user",
-			Value: name,
-			Expires: time.Now().Add(24*time.Hour),
-			HttpOnly: false,
-			Secure: true,
-		})
-		_, err := utils.DB.Exec("UPDATE users SET sessionToken = ? WHERE name = ?", sessionToken, name)
-		if err != nil {
-			log.Printf("UPDATE query failed with error: %v", err)
-			log.Printf("Error type: %T", err)
-			http.Error(w, fmt.Sprintf("Database update failed: %v", err), http.StatusInternalServerError)
-		}
+		query := `
+		INSERT INTO tokens (id, sessionToken, sessionExpires, csrfToken, csrfExpires)
+		VALUES ((SELECT id FROM users WHERE name = ?), ?, ?, ?, ?)
+		`
 
-		_, err = utils.DB.Exec("UPDATE users SET csrfToken = ? WHERE name = ?", csrfToken, name)
+		_, err := utils.DB.Exec(query, name, sessionToken, time.Now().Add(24*time.Hour), csrfToken, time.Now().Add(24*time.Hour))
 		if err != nil {
-			log.Printf("UPDATE query failed with error: %v", err)
+			log.Printf("INSERT query failed with error: %v", err)
 			log.Printf("Error type: %T", err)
 			http.Error(w, fmt.Sprintf("Database update failed: %v", err), http.StatusInternalServerError)
 		}

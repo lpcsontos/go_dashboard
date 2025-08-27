@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"db_test/utils"
+	"dashboard/utils"
    _ "database/sql"
 	_"fmt"
 	_"time"

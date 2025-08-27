@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"db_test/utils"
+	"dashboard/utils"
    _ "database/sql"
 	"fmt"
    "log"
@@ -35,19 +35,19 @@ func Register(w http.ResponseWriter, r *http.Request){
 
 	name := r.FormValue("name")
 	password := r.FormValue("password")
-	
+	role := r.FormValue("role")
+
 	if len(name) > 20 || len(password) > 20{
 		http.Error(w, "name or password should be maximum 20 character long", http.StatusBadRequest)
 		return
 	}
 
-	var db_name string
-	Qerr := utils.DB.QueryRow("SELECT name FROM users WHERE name = ?", name).Scan(&db_name)
-	if Qerr == nil {
-		//http.Error(w, "the username is already taken", http.StatusConflict)
+	var db_name int
+	Qerr := utils.DB.QueryRow("SELECT COUNT(*) FROM users WHERE name = ?", name).Scan(&db_name)
+	if Qerr != nil || db_name != 0{
 		w.WriteHeader(http.StatusConflict)
-    	fmt.Fprintf(w, `<script>alert("Username is already taken");window.history.back()</script>`)
-
+   	w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"error":"Username is already taken"}`)
 		return
 	}
 
@@ -56,13 +56,11 @@ func Register(w http.ResponseWriter, r *http.Request){
 		log.Fatal("Hashing error:", err)
 	}
 	
-	sqlQuery := `INSERT INTO users (name, password) VALUES (?, ?)`
-	_, err = utils.DB.Exec(sqlQuery, name, string(hashpass))
+	sqlQuery := `INSERT INTO users (name, password, role) VALUES (?, ?, ?)`
+	_, err = utils.DB.Exec(sqlQuery, name, string(hashpass), role)
 	if err != nil {
 		http.Error(w,"Cannot create user:", http.StatusInternalServerError)
 	}
 
-	fmt.Printf("Beküldött név: %s, jelszó: %s\n", name, password)
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
