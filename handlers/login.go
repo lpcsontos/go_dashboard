@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"dashboard/utils"
+	"dashboard/auth"
    _ "database/sql"
 	"fmt"
 	"time"
@@ -18,6 +19,11 @@ func Root(w http.ResponseWriter, r *http.Request){
 }
 
 func LoginHand( w http.ResponseWriter, r *http.Request){
+
+	if auth.IsLoggedIn(r){
+		http.Redirect(w, r, "/test", http.StatusSeeOther)
+	}
+
 	err := utils.LoginPage.Execute(w, nil)
 	if err != nil {
 		http.Error(w, "404", http.StatusInternalServerError)
@@ -29,6 +35,7 @@ func Login(w http.ResponseWriter, r *http.Request){
 		http.Error(w, "only post method", http.StatusMethodNotAllowed)
 		return
 	}
+
 
 	err := r.ParseForm()
 	if err != nil {
