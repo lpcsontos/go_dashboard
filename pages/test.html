@@ -1,0 +1,36 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+   <meta charset="UTF-8">
+</head>
+<body>
+   <h1>Hello</h1>
+ 	<button id="logoutBtn">Logout</button>
+<script>
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  const csrfToken = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrf_token='))
+    ?.split('=')[1];
+
+  fetch("/logout", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrfToken
+    },
+    body: JSON.stringify({})
+  })
+  .then(res => {
+    if (res.ok) {
+		window.location.href = "/login";
+    } else {
+      console.error("Logout failed");
+    }
+  });
+});
+</script>
+</body>
+</html>
