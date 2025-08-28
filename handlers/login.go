@@ -3,7 +3,7 @@ package handlers
 import (
 	"dashboard/utils"
 	"dashboard/auth"
-   _ "database/sql"
+   "database/sql"
 	"fmt"
 	"time"
    "log"
@@ -52,12 +52,15 @@ func Login(w http.ResponseWriter, r *http.Request){
 	}
 
 	var hash string
-	Qerr := utils.DB.QueryRow("SELECT password FROM users WHERE name = ?", name).Scan(&hash)
-	if Qerr != nil {
-		w.WriteHeader(http.StatusUnauthorized)
+	err = utils.DB.QueryRow("SELECT password FROM users WHERE name = ?", name).Scan(&hash)
+	if err == sql.ErrNoRows {
+    	log.Println("User not found: no matching account")
     	fmt.Fprintf(w, `<script>alert("Wrong username or password");window.history.back()</script>`)
-		log.Println("User not found:", Qerr)
-		return
+   	return
+	} else if err != nil {
+   	log.Println("Database error:", err)
+    	http.Error(w, "Server error", http.StatusInternalServerError)
+    	return
 	}
 
 	if utils.PassComp(hash, password){
@@ -71,6 +74,7 @@ func Login(w http.ResponseWriter, r *http.Request){
 			Expires: time.Now().Add(24*time.Hour),
 			HttpOnly: true,
 			Secure: true,
+			Path: "/",
 		})
 
 		http.SetCookie(w, &http.Cookie{
@@ -79,6 +83,8 @@ func Login(w http.ResponseWriter, r *http.Request){
 			Expires: time.Now().Add(24*time.Hour),
 			HttpOnly: false,
 			Secure: true,
+			Path:"/",
+			SameSite: http.SameSiteStrictMode,
 		})
 
 		query := `

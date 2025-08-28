@@ -2,7 +2,73 @@
 <html lang="hu">
 <head>
    <meta charset="UTF-8">
-   <title>Go HTML példa</title>
+   <title>User editor</title>
+	<style>
+		#label
+		{
+			text-align: center;
+			display: flex;
+			max-height: 38%;
+			max-width: 60%;
+			margin: auto;
+			justify-content: center;
+		}
+
+		#show
+		{
+			border: 3px solid black;
+			display:	flex;
+			margin: auto;
+			flex-direction: column;
+			align-items: center;
+			max-height: 38%;
+			max-width: 60%;
+			overflow-y:scroll;
+			text-align: center;
+		}
+
+		.p-tag
+		{
+      	padding: 10px;
+			white-space: nowrap;
+			margin-right: auto;
+      	background-color: #f0f0f0;
+      	border-radius: 4px;
+		}
+
+		#rel
+		{
+			white-space: nowarp;
+			padding: 10px;
+			border-radius: 4px;
+			border: none;
+			cursor: pointer;
+			font-size: 1em;
+			height: auto;
+			align-self: center;
+		}
+		
+		.user-card {
+		  display: flex;
+		  gap: 125%;
+		  margin-right: auto;
+		  flex-direction: row;
+		  align-items: center;
+		  background-color: #f9f9f9;
+		  border-radius: 6px;
+		}
+
+		.delete-btn
+		{
+      	padding: 10px;
+			white-space: nowrap;
+			margin-right: auto;
+      	background-color: #f0f0f0;
+      	border-radius: 4px;
+			border: none;
+			cursor: pointer;
+		}
+	</style>
 </head>
 <body>
    <h1>Reg test</h1>
@@ -20,6 +86,23 @@
 		<input type="hidden" id="csrf_token" name="csrf_token" value="{{.CSRFToken}}">
   		<button type="submit" id="sb">Submit</button>
 	</form>
+	<div id="label">
+		<p class="p-tag">id</p> <p class="p-tag">name</p> <p class="p-tag">role</p> <button id="rel">🗘</button>
+	</div>
+	<div id="show">
+		{{range .Users}}
+		 <div class="user-card">
+			<p class="p-tag">{{.ID}}</p>
+			<p class="p-tag">{{.Name}}</p>
+			<p class="p-tag">{{.Role}}</p>
+			<form id="delForm">
+			  <input type="hidden" id="id" name="id" value="{{.ID}}">
+			  <input type="hidden" id="csrf_token" name="csrf_token" value="{{$.CSRFToken}}">
+			  <button type="submit" class="delete-btn" data-id="{{.ID}}">Delete</button>
+			</form>
+		 </div>
+	  {{end}}
+	</div>
 	<script>
 		document.getElementById("regForm").addEventListener("submit", (e) => {
 			e.preventDefault();
@@ -38,7 +121,7 @@
 			formData.append("password", password); 
 			formData.append("role", role); 
 
-		  fetch("/submit_reg", {
+		  fetch("/api/register", {
 			  method: "POST",
 			  credentials: "include",
 			  headers: {
@@ -47,7 +130,13 @@
 			  },
 			  body: formData.toString()
 			})
-			.then(res => res.json())
+			.then(res => {
+				if (res.redirected) {
+    				window.location.href = res.url;
+  				} else {
+    				return res.json();
+  				}
+			})
 			.then(data => {
 			  if (data.error) {
 				 alert("Registration failed: " + data.error);
@@ -59,6 +148,30 @@
 			  console.error("Unexpected error:", err);
 			});
 		});
+
+
+		
+		document.querySelectorAll(".delete-btn").forEach(btn => {
+		  btn.addEventListener("click", (e) => {
+			 e.preventDefault();
+			 const csrfToken = document.cookie
+			 	.split('; ')
+			 	.find(row => row.startsWith('csrf_token='))
+			 	?.split('=')[1];
+			 const userId = btn.getAttribute("data-id");
+
+			 fetch("/api/delete", {
+				method: "POST",
+				headers: {
+				  "Content-Type": "application/x-www-form-urlencoded",
+				  "X-CSRF-Token": csrfToken
+				},
+				body: `id=${userId}`
+			 })
+			 .then(() => location.reload());
+		  });
+		});
+
 	</script>
 </body>
 </html>

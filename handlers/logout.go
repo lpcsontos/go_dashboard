@@ -29,8 +29,8 @@ func LogoutHand( w http.ResponseWriter, r *http.Request){
 	}
 
 	expired := time.Now().Add(-1 * time.Hour)
-	http.SetCookie(w, &http.Cookie{Name: "session_token", Value: "", Expires: expired, HttpOnly: true, Secure: true})
-	http.SetCookie(w, &http.Cookie{Name: "csrf_token", Value: "", Expires: expired, HttpOnly: false, Secure: true})
+	http.SetCookie(w, &http.Cookie{Name: "session_token", Value: "", Expires: expired, HttpOnly: true, Secure: true, Path:"/",})
+	http.SetCookie(w, &http.Cookie{Name: "csrf_token", Value: "", Expires: expired, HttpOnly: false, Secure: true, Path:"/", SameSite: http.SameSiteStrictMode,})
 	
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

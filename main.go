@@ -24,11 +24,14 @@ func main() {
 
    mux.HandleFunc("/", handlers.Root)
 	mux.HandleFunc("/login", handlers.LoginHand)
-	mux.HandleFunc("/register", auth.AuthAdmin(handlers.RegHand))
-	mux.HandleFunc("/submit_login", handlers.Login)
-	mux.HandleFunc("/submit_reg", auth.CSRFMiddlewareAdmin(handlers.Register))
+	
+	mux.HandleFunc("/users", auth.AuthAdmin(handlers.RegHand))
 	mux.HandleFunc("/test", auth.Auth(handlers.TestHand))
-	mux.HandleFunc("/logout", auth.CSRFMiddleware(handlers.LogoutHand))
+	
+	mux.HandleFunc("/api/login", handlers.Login)
+	mux.HandleFunc("/api/register", auth.CSRFMiddlewareAdmin(handlers.Register))
+	mux.HandleFunc("/api/delete", auth.CSRFMiddlewareAdmin(handlers.Delete))
+	mux.HandleFunc("/api/logout", auth.CSRFMiddleware(handlers.LogoutHand))
 
    err = http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", mux)
    if err != nil {

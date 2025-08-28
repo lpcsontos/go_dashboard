@@ -14,7 +14,7 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
     .find(row => row.startsWith('csrf_token='))
     ?.split('=')[1];
 
-  fetch("/logout", {
+  fetch("/api/logout", {
     method: "POST",
     credentials: "include",
     headers: {

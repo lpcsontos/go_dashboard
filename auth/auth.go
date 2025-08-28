@@ -30,14 +30,14 @@ func IsLoggedIn(r *http.Request) bool {
 	var db int
 	qerr := utils.DB.QueryRow("SELECT COUNT(*) as count FROM users WHERE id = (SELECT id FROM tokens WHERE sessionToken = ?)", st.Value).Scan(&db)
 	if qerr != nil || db == 0{
-		log.Println("User not found:", qerr)
+		log.Println("User not found with counting:", qerr)
 		return false
 	}
 
 	var sessionExpiresStr string
 	qerr = utils.DB.QueryRow("SELECT sessionExpires FROM tokens WHERE sessionToken = ?", st.Value).Scan(&sessionExpiresStr)
 	if qerr != nil{
-		log.Println("User not found:", qerr)
+		log.Println("session not found:", qerr)
 		return false
 	}
 
@@ -65,7 +65,7 @@ func IsLoggedInAdmin(r *http.Request) bool {
 	var db int
 	qerr := utils.DB.QueryRow("SELECT COUNT(*) as count FROM users WHERE id = (SELECT id FROM tokens WHERE sessionToken = ?)", st.Value).Scan(&db)
 	if qerr != nil || db == 0{
-		log.Println("User not found:", qerr)
+		log.Println("User not found with counting:", qerr)
 		return false
 	}
 

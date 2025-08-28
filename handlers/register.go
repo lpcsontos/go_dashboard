@@ -12,13 +12,67 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-
+type User struct {
+    ID   int
+    Name string
+    Role string
+}
 
 func RegHand( w http.ResponseWriter, r *http.Request){
-	err := utils.RegPage.Execute(w, nil)
+	rows, err := utils.DB.Query("SELECT id, name, role FROM users")
+    if err != nil {
+        http.Error(w, "Database error", http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close()
+
+    var users []User
+    for rows.Next() {
+        var u User
+        if err := rows.Scan(&u.ID, &u.Name, &u.Role); err == nil {
+            users = append(users, u)
+        }
+    }
+
+	 token, err := r.Cookie("csrf_token")
+	if err != nil || token.Value ==""{
+		log.Println("csrf cookie not good: ", err)
+	}
+
+   data := struct {
+        Users     []User
+        CSRFToken string
+    }{
+        Users:     users,
+        CSRFToken: token.Value,
+    }
+
+	err = utils.RegPage.Execute(w, data)
 	if err != nil {
 		http.Error(w, "404", http.StatusInternalServerError)
 	}
+}
+
+func Delete(w http.ResponseWriter, r *http.Request){
+	if r.Method != http.MethodPost {
+        http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    err := r.ParseForm()
+    if err != nil {
+        http.Error(w, "Invalid form", http.StatusBadRequest)
+        return
+    }
+
+    id := r.FormValue("id")
+    _, err = utils.DB.Exec("DELETE FROM users WHERE id = ?", id)
+    if err != nil {
+        http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+        return
+    }
+
+	http.Redirect(w, r, "/users", http.StatusSeeOther)
 }
 
 func Register(w http.ResponseWriter, r *http.Request){
@@ -62,5 +116,6 @@ func Register(w http.ResponseWriter, r *http.Request){
 		http.Error(w,"Cannot create user:", http.StatusInternalServerError)
 	}
 
+	http.Redirect(w, r, "/users", http.StatusSeeOther)
 }
 
